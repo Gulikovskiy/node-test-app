@@ -4,6 +4,8 @@ export type Task = {
   description: string;
 };
 
+export type NewTask = Omit<Task, "id">;
+
 export type HttpError = Error & {
   status?: number;
 };

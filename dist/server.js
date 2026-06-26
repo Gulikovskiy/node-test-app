@@ -6,15 +6,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const services_1 = require("./services");
 const store_1 = require("./store");
+const schema_1 = require("./schema");
+const drizzle_orm_1 = require("drizzle-orm");
 const app = (0, express_1.default)();
 const port = Number(process.env.PORT) || 3000;
 app.use(express_1.default.json());
-let nextItemId = 3;
+// let nextItemId = 3;
+const getNextId = async () => (await store_1.db.select().from(schema_1.tasksSchema)).length + 1;
 app.get("/health", (req, res) => {
     res.json({ status: "ok" });
 });
-app.get("/tasks", (req, res) => {
-    res.json({ data: store_1.tasks });
+app.get("/tasks", async (req, res) => {
+    const tasks = await store_1.db.select().from(schema_1.tasksSchema);
+    res.json({ data: tasks });
 });
 app.get("/tasks/:id", async (req, res, next) => {
     if ((0, services_1.isInvalidId)(req.params.id)) {
@@ -26,18 +30,17 @@ app.get("/tasks/:id", async (req, res, next) => {
     }
     res.json({ data: item });
 });
-app.post("/tasks", (req, res, next) => {
+app.post("/tasks", async (req, res, next) => {
     const { name, description = "" } = req.body;
     const error = (0, services_1.validateTaskInput)({ name, description });
     if (error)
         return next(error);
     const task = {
-        id: nextItemId,
+        id: await getNextId(),
         name: String(name).trim(),
         description: String(description).trim()
     };
-    nextItemId += 1;
-    store_1.tasks.push(task);
+    await store_1.db.insert(schema_1.tasksSchema).values(task);
     res.status(201).json({ data: task });
 });
 app.patch("/tasks/:id", async (req, res, next) => {
@@ -60,15 +63,15 @@ app.patch("/tasks/:id", async (req, res, next) => {
     }
     res.json({ data: item });
 });
-app.delete("/tasks/:id", (req, res, next) => {
+app.delete("/tasks/:id", async (req, res, next) => {
     if ((0, services_1.isInvalidId)(req.params.id)) {
         return next((0, services_1.createHttpError)(400, "Bad Request. Invalid params"));
     }
-    const taskIndex = store_1.tasks.findIndex((task) => task.id === Number(req.params.id));
-    if (taskIndex === -1) {
+    const item = await (0, store_1.findItemById)(req.params.id);
+    if (!item) {
         return next((0, services_1.createHttpError)(404, "Task not found"));
     }
-    store_1.tasks.splice(taskIndex, 1);
+    await store_1.db.delete(schema_1.tasksSchema).where((0, drizzle_orm_1.eq)(schema_1.tasksSchema.id, item.id));
     res.status(204).send();
 });
 app.use((req, res) => {

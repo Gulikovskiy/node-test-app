@@ -1,20 +1,19 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import { createHttpError, isInvalidId, validateTaskInput } from "./services";
-import { findItemById, tasks } from "./store";
-import { HttpError, Task, TaskParams } from "./types";
+import { createTask, deleteTask, findItemById, listTasks, updateTask } from "./store";
+import { HttpError, TaskParams } from "./types";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
 
 app.use(express.json());
 
-let nextItemId = 3;
-
 app.get("/health", (req: Request, res: Response) => {
   res.json({ status: "ok" });
 });
 
-app.get("/tasks", (req: Request, res: Response) => {
+app.get("/tasks", async(req: Request, res: Response) => {
+  const tasks = await listTasks();
   res.json({ data: tasks });
 });
 
@@ -31,24 +30,20 @@ app.get("/tasks/:id", async(req: Request<TaskParams>, res: Response, next: NextF
   res.json({ data: item });
 });
 
-app.post("/tasks", (req: Request, res: Response, next: NextFunction) => {
+app.post("/tasks", async (req: Request, res: Response, next: NextFunction) => {
   const { name, description = "" } = req.body as {
     name?: unknown;
     description?: unknown;
   };
-  const error = validateTaskInput({name,description});
+  const error = validateTaskInput({ name, description });
   if (error) return next(error);
 
-  const task: Task = {
-    id: nextItemId,
+  const created = await createTask({
     name: String(name).trim(),
     description: String(description).trim()
-  };
+  });
 
-  nextItemId += 1;
-  tasks.push(task);
-
-  res.status(201).json({ data: task });
+  res.status(201).json({ data: created });
 });
 
 app.patch("/tasks/:id", async(req: Request<TaskParams>, res: Response, next: NextFunction) => {
@@ -75,21 +70,21 @@ app.patch("/tasks/:id", async(req: Request<TaskParams>, res: Response, next: Nex
   if (description !== undefined) {
     item.description = String(description).trim();
   }
-
+  await updateTask(item)
   res.json({ data: item });
 });
 
-app.delete("/tasks/:id", (req: Request<TaskParams>, res: Response, next: NextFunction) => {
+app.delete("/tasks/:id", async(req: Request<TaskParams>, res: Response, next: NextFunction) => {
   if (isInvalidId(req.params.id)) {
     return next(createHttpError(400, "Bad Request. Invalid params"));
   }
-  const taskIndex = tasks.findIndex((task) => task.id === Number(req.params.id));
+  
+  const item = await findItemById(req.params.id);
 
-  if (taskIndex === -1) {
+  if (!item) {
     return next(createHttpError(404, "Task not found"));
   }
-
-  tasks.splice(taskIndex, 1);
+  await deleteTask(item)
   res.status(204).send();
 });
 

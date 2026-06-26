@@ -1,23 +1,33 @@
-import { Task } from "./types";
-import 'dotenv/config';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import "dotenv/config";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import * as schema from "./schema";
+import { NewTask, Task } from "./types";
 
-const db = drizzle(process.env.DATABASE_URL!);
-console.log('db: ',db)
+const client = postgres(process.env.DATABASE_URL!);
 
-export const tasks: Task[] = [
-  {
-    id: 1,
-    name: "First item",
-    description: "This item lives in memory."
-  },
-  {
-    id: 2,
-    name: "Second item",
-    description: "Restarting the server resets this data."
-  }
-];
+export const db = drizzle(client, { schema });
 
 export async function findItemById(id: string): Promise<Task | undefined> {
-  return tasks.find((taks) => taks.id === Number(id));
+    const [task] = await db.select().from(schema.tasksSchema).where(eq(schema.tasksSchema.id, Number(id)));
+    return task;
+}
+
+export  async function listTasks(){
+     return await db.select().from(schema.tasksSchema);
+}
+
+export async function createTask(input: NewTask): Promise<Task> {
+  const [created] = await db.insert(schema.tasksSchema).values(input).returning();
+  return created;
+}
+
+export async function updateTask(task: Task) {
+  const { id, ...updates } = task;
+  await db.update(schema.tasksSchema).set(updates).where(eq(schema.tasksSchema.id, id));
+}
+
+export  async function deleteTask(task:Task){ 
+    await db.delete(schema.tasksSchema).where(eq(schema.tasksSchema.id, task.id))
 }
