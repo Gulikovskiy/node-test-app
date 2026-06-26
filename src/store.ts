@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
-import { NewTask, Task } from "./types";
+import { NewTask, NewUser, Task, User } from "./types";
 
 const client = postgres(process.env.DATABASE_URL!);
 
@@ -20,6 +20,11 @@ export  async function listTasks(){
 
 export async function createTask(input: NewTask): Promise<Task> {
   const [created] = await db.insert(schema.tasksSchema).values(input).returning();
+  return created;
+}
+
+export async function createUser(input: NewUser): Promise<User> {
+  const [created] = await db.insert(schema.usersSchema).values(input).returning();
   return created;
 }
 

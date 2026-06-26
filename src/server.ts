@@ -1,6 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
-import { createHttpError, isInvalidId, validateTaskInput } from "./services";
-import { createTask, deleteTask, findItemById, listTasks, updateTask } from "./store";
+import argon2 from "argon2";
+import { createHttpError, isInvalidId, isUniqueViolation, validateRegisterInput, validateTaskInput } from "./services";
+import { createTask, createUser, deleteTask, findItemById, listTasks, updateTask } from "./store";
 import { HttpError, TaskParams } from "./types";
 
 const app = express();
@@ -10,6 +11,35 @@ app.use(express.json());
 
 app.get("/health", (req: Request, res: Response) => {
   res.json({ status: "ok" });
+});
+
+app.post("/auth/register", async (req: Request, res: Response, next: NextFunction) => {
+  const { email, password } = req.body as {
+    email?: unknown;
+    password?: unknown;
+  };
+  const error = validateRegisterInput({ email, password });
+  if (error) return next(error);
+
+  try {
+    const passwordHash = await argon2.hash(String(password));
+    const created = await createUser({
+      email: String(email).trim().toLowerCase(),
+      passwordHash,
+    });
+
+    res.status(201).json({
+      data: {
+        id: created.id,
+        email: created.email,
+      },
+    });
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      return next(createHttpError(409, "Email is already registered"));
+    }
+    return next(err);
+  }
 });
 
 app.get("/tasks", async(req: Request, res: Response) => {

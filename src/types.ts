@@ -6,6 +6,14 @@ export type Task = {
 
 export type NewTask = Omit<Task, "id">;
 
+export type User = {
+  id: number;
+  email: string;
+  passwordHash: string;
+};
+
+export type NewUser = Omit<User, "id">;
+
 export type HttpError = Error & {
   status?: number;
 };

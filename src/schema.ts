@@ -5,3 +5,9 @@ export const tasksSchema = pgTable("tasks", {
   name: text("name").notNull(),
   description: text("description").notNull().default(""),
 });
+
+export const usersSchema = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: text("email").unique().notNull(),
+  passwordHash: text("passwordHash").notNull().default(""),
+});

@@ -22,6 +22,21 @@ export function validateTaskInput(
   return undefined;
 }
 
+export function validateRegisterInput(params: {
+  email: unknown;
+  password: unknown;
+}): HttpError | undefined {
+  const { email, password } = params;
+
+  if (!isString(email) || !isValidEmail(email)) {
+    return createHttpError(400, "Email must be a valid email address");
+  }
+  if (!isString(password) || password.length < 8) {
+    return createHttpError(400, "Password must be at least 8 characters");
+  }
+  return undefined;
+}
+
 export function isInvalidId(id: unknown): boolean {
   return typeof id !== "string" || id.trim() === "" || !Number.isFinite(Number(id));
 }
@@ -34,8 +49,22 @@ export function isNonEmptyString(value: unknown): value is string {
   return isString(value) && value.trim().length > 0;
 }
 
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
 export function createHttpError(status: number, message: string): HttpError {
   const error = new Error(message) as HttpError;
   error.status = status;
   return error;
+}
+
+
+export function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "23505"
+  );
 }
