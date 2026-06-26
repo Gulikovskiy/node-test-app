@@ -1,11 +1,17 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import argon2 from "argon2";
-import { createHttpError, isInvalidId, isUniqueViolation, validateRegisterInput, validateTaskInput } from "./services";
-import { createTask, createUser, deleteTask, findItemById, listTasks, updateTask } from "./store";
+import jwt from "jsonwebtoken";
+import { createHttpError, isInvalidId, isUniqueViolation, validateLoginInput, validateRegisterInput, validateTaskInput } from "./services";
+import { createTask, createUser, deleteTask, findItemById, findUserByEmail, listTasks, updateTask } from "./store";
 import { HttpError, TaskParams } from "./types";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
+const jwtSecret = process.env.JWT_SECRET;
+
+if (!jwtSecret) {
+  throw new Error("JWT_SECRET is required");
+}
 
 app.use(express.json());
 
@@ -38,6 +44,39 @@ app.post("/auth/register", async (req: Request, res: Response, next: NextFunctio
     if (isUniqueViolation(err)) {
       return next(createHttpError(409, "Email is already registered"));
     }
+    return next(err);
+  }
+});
+
+app.post("/auth/login", async (req: Request, res: Response, next: NextFunction) => {
+  const { email, password } = req.body as {
+    email?: unknown;
+    password?: unknown;
+  };
+  const error = validateLoginInput({ email, password });
+  if (error) return next(error);
+
+  const unauthorizedError = createHttpError(401, "Invalid email or password");
+
+  try {
+    const user = await findUserByEmail(String(email).trim().toLowerCase());
+    if (!user) {
+      return next(unauthorizedError);
+    }
+
+    const passwordMatches = await argon2.verify(user.passwordHash, String(password));
+    if (!passwordMatches) {
+      return next(unauthorizedError);
+    }
+
+    const token = jwt.sign({ id: user.id }, jwtSecret, { expiresIn: "1h" });
+
+    res.json({
+      data: {
+        token,
+      },
+    });
+  } catch (err) {
     return next(err);
   }
 });

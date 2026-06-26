@@ -37,6 +37,18 @@ export function validateRegisterInput(params: {
   return undefined;
 }
 
+export function validateLoginInput(params: {
+  email: unknown;
+  password: unknown;
+}): HttpError | undefined {
+  const { email, password } = params;
+
+  if (!isNonEmptyString(email) || !isNonEmptyString(password)) {
+    return createHttpError(400, "Email and password are required");
+  }
+  return undefined;
+}
+
 export function isInvalidId(id: unknown): boolean {
   return typeof id !== "string" || id.trim() === "" || !Number.isFinite(Number(id));
 }

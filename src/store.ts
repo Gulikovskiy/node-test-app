@@ -28,6 +28,14 @@ export async function createUser(input: NewUser): Promise<User> {
   return created;
 }
 
+export async function findUserByEmail(email: string): Promise<User | undefined> {
+  const [user] = await db
+    .select()
+    .from(schema.usersSchema)
+    .where(eq(schema.usersSchema.email, email));
+  return user;
+}
+
 export async function updateTask(task: Task) {
   const { id, ...updates } = task;
   await db.update(schema.tasksSchema).set(updates).where(eq(schema.tasksSchema.id, id));
