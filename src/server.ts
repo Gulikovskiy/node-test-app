@@ -4,16 +4,14 @@ import jwt from "jsonwebtoken";
 import { createHttpError, isInvalidId, isUniqueViolation, validateLoginInput, validateRegisterInput, validateTaskInput } from "./services";
 import { createTask, createUser, deleteTask, findItemById, findUserByEmail, listTasks, updateTask } from "./store";
 import { HttpError, TaskParams } from "./types";
+import { jwtSecret } from "./config";
+import { authenticate } from "./middleware";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
-const jwtSecret = process.env.JWT_SECRET;
-
-if (!jwtSecret) {
-  throw new Error("JWT_SECRET is required");
-}
 
 app.use(express.json());
+app.use("/tasks", authenticate);
 
 app.get("/health", (req: Request, res: Response) => {
   res.json({ status: "ok" });

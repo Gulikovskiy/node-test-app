@@ -15,6 +15,13 @@
       "when": 1782503026614,
       "tag": "0001_lying_mephistopheles",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782509051457,
+      "tag": "0002_faulty_rocket_raccoon",
+      "breakpoints": true
     }
   ]
 }

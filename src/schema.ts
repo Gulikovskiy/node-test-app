@@ -9,5 +9,5 @@ export const tasksSchema = pgTable("tasks", {
 export const usersSchema = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").unique().notNull(),
-  passwordHash: text("passwordHash").notNull().default(""),
+  passwordHash: text("passwordHash").notNull(),
 });
