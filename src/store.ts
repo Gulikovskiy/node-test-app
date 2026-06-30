@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
@@ -9,13 +9,16 @@ const client = postgres(process.env.DATABASE_URL!);
 
 export const db = drizzle(client, { schema });
 
-export async function findItemById(id: string): Promise<Task | undefined> {
-    const [task] = await db.select().from(schema.tasksSchema).where(eq(schema.tasksSchema.id, Number(id)));
+export async function findItemById(id: string, userId: number): Promise<Task | undefined> {
+    const [task] = await db.select().from(schema.tasksSchema).where(and(
+            eq(schema.tasksSchema.id, Number(id)),
+            eq(schema.tasksSchema.userId, userId)
+        ));
     return task;
 }
 
-export  async function listTasks(){
-     return await db.select().from(schema.tasksSchema);
+export async function listTasks(userId: number) {
+  return db.select().from(schema.tasksSchema).where(eq(schema.tasksSchema.userId, userId));
 }
 
 export async function createTask(input: NewTask): Promise<Task> {
@@ -37,10 +40,21 @@ export async function findUserByEmail(email: string): Promise<User | undefined> 
 }
 
 export async function updateTask(task: Task) {
-  const { id, ...updates } = task;
-  await db.update(schema.tasksSchema).set(updates).where(eq(schema.tasksSchema.id, id));
+  const { id, userId, ...updates } = task;
+  await db
+    .update(schema.tasksSchema)
+    .set(updates)
+    .where(and(
+      eq(schema.tasksSchema.id, id),
+      eq(schema.tasksSchema.userId, userId)
+    ));
 }
 
-export  async function deleteTask(task:Task){ 
-    await db.delete(schema.tasksSchema).where(eq(schema.tasksSchema.id, task.id))
+export async function deleteTask(task: Task) {
+  await db
+    .delete(schema.tasksSchema)
+    .where(and(
+      eq(schema.tasksSchema.id, task.id),
+      eq(schema.tasksSchema.userId, task.userId)
+    ));
 }

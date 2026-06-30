@@ -79,8 +79,8 @@ app.post("/auth/login", async (req: Request, res: Response, next: NextFunction) 
   }
 });
 
-app.get("/tasks", async(req: Request, res: Response) => {
-  const tasks = await listTasks();
+app.get("/tasks", async(req: Request, res: Response,next: NextFunction) => {
+  const tasks = await listTasks(req.userId!);
   res.json({ data: tasks });
 });
 
@@ -88,8 +88,8 @@ app.get("/tasks/:id", async(req: Request<TaskParams>, res: Response, next: NextF
   if (isInvalidId(req.params.id)) {
     return next(createHttpError(400, "Bad Request. Invalid params"));
   }
-  const item = await findItemById(req.params.id);
 
+  const item = await findItemById(req.params.id,req.userId!);
   if (!item) {
     return next(createHttpError(404, "Task not found"));
   }
@@ -107,7 +107,8 @@ app.post("/tasks", async (req: Request, res: Response, next: NextFunction) => {
 
   const created = await createTask({
     name: String(name).trim(),
-    description: String(description).trim()
+    description: String(description).trim(),
+    userId: req.userId!,
   });
 
   res.status(201).json({ data: created });
@@ -117,7 +118,8 @@ app.patch("/tasks/:id", async(req: Request<TaskParams>, res: Response, next: Nex
   if (isInvalidId(req.params.id)) {
     return next(createHttpError(400, "Bad Request. Invalid params"));
   }
-  const item = await findItemById(req.params.id);
+
+  const item = await findItemById(req.params.id,req.userId!);
 
   if (!item) {
     return next(createHttpError(404, "Task not found"));
@@ -146,7 +148,7 @@ app.delete("/tasks/:id", async(req: Request<TaskParams>, res: Response, next: Ne
     return next(createHttpError(400, "Bad Request. Invalid params"));
   }
   
-  const item = await findItemById(req.params.id);
+  const item = await findItemById(req.params.id,req.userId!);
 
   if (!item) {
     return next(createHttpError(404, "Task not found"));

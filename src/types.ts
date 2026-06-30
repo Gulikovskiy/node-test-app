@@ -2,6 +2,7 @@ export type Task = {
   id: number;
   name: string;
   description: string;
+  userId: number;
 };
 
 export type NewTask = Omit<Task, "id">;
