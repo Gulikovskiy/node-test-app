@@ -1,0 +1,10 @@
+import "dotenv/config";
+import Redis from "ioredis";
+
+const redisUrl = process.env.REDIS_URL;
+
+if (!redisUrl) {
+  throw new Error("REDIS_URL is required");
+}
+
+export const cache = new Redis(redisUrl);
