@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "node --watch --experimental-strip-types src/server.ts",
+    "dev": "tsx watch src/server.ts",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -33,6 +33,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.0.3",
     "drizzle-kit": "^0.31.10",
+    "tsx": "^4.22.4",
     "typescript": "^5.8.3"
   }
 }
