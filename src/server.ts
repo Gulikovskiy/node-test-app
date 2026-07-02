@@ -4,11 +4,27 @@ import express, { type NextFunction, type Request, type Response } from "express
 import jwt from "jsonwebtoken";
 import { jwtSecret } from "./config";
 import { authenticate } from "./middleware";
-import { createHttpError, isInvalidId, isUniqueViolation, validateLoginInput, validateRegisterInput, validateTaskInput } from "./services";
-import { createTask, createUser, db, deleteTask, findItemById, findUserByEmail, listTasks, updateTask } from "./store";
+import {
+  createHttpError,
+  isInvalidId,
+  isUniqueViolation,
+  validateLoginInput,
+  validateRegisterInput,
+  validateTaskInput,
+} from "./services";
+import {
+  createTask,
+  createUser,
+  db,
+  deleteTask,
+  findItemById,
+  findUserByEmail,
+  listTasks,
+  updateTask,
+} from "./store";
 import { HttpError, TaskParams } from "./types";
 
-const app = express();
+export const app = express();
 const port = Number(process.env.PORT) || 3000;
 
 app.use(express.json());
@@ -80,17 +96,17 @@ app.post("/auth/login", async (req: Request, res: Response, next: NextFunction) 
   }
 });
 
-app.get("/tasks", async(req: Request, res: Response,next: NextFunction) => {
+app.get("/tasks", async (req: Request, res: Response, _next: NextFunction) => {
   const tasks = await listTasks(req.userId!);
   res.json({ data: tasks });
 });
 
-app.get("/tasks/:id", async(req: Request<TaskParams>, res: Response, next: NextFunction) => {
+app.get("/tasks/:id", async (req: Request<TaskParams>, res: Response, next: NextFunction) => {
   if (isInvalidId(req.params.id)) {
     return next(createHttpError(400, "Bad Request. Invalid params"));
   }
 
-  const item = await findItemById(req.params.id,req.userId!);
+  const item = await findItemById(req.params.id, req.userId!);
   if (!item) {
     return next(createHttpError(404, "Task not found"));
   }
@@ -115,12 +131,12 @@ app.post("/tasks", async (req: Request, res: Response, next: NextFunction) => {
   res.status(201).json({ data: created });
 });
 
-app.patch("/tasks/:id", async(req: Request<TaskParams>, res: Response, next: NextFunction) => {
+app.patch("/tasks/:id", async (req: Request<TaskParams>, res: Response, next: NextFunction) => {
   if (isInvalidId(req.params.id)) {
     return next(createHttpError(400, "Bad Request. Invalid params"));
   }
 
-  const item = await findItemById(req.params.id,req.userId!);
+  const item = await findItemById(req.params.id, req.userId!);
 
   if (!item) {
     return next(createHttpError(404, "Task not found"));
@@ -140,51 +156,53 @@ app.patch("/tasks/:id", async(req: Request<TaskParams>, res: Response, next: Nex
   if (description !== undefined) {
     item.description = String(description).trim();
   }
-  await updateTask(item)
+  await updateTask(item);
   res.json({ data: item });
 });
 
-app.delete("/tasks/:id", async(req: Request<TaskParams>, res: Response, next: NextFunction) => {
+app.delete("/tasks/:id", async (req: Request<TaskParams>, res: Response, next: NextFunction) => {
   if (isInvalidId(req.params.id)) {
     return next(createHttpError(400, "Bad Request. Invalid params"));
   }
-  
-  const item = await findItemById(req.params.id,req.userId!);
+
+  const item = await findItemById(req.params.id, req.userId!);
 
   if (!item) {
     return next(createHttpError(404, "Task not found"));
   }
-  await deleteTask(item)
+  await deleteTask(item);
   res.status(204).send();
 });
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({
     error: {
-      message: "Route not found"
-    }
+      message: "Route not found",
+    },
   });
 });
 
-app.use((err: HttpError, req: Request, res: Response, next: NextFunction) => {
+app.use((err: HttpError, req: Request, res: Response, _next: NextFunction) => {
   const status = err.status || 500;
   const message = status === 500 ? "Internal server error" : err.message;
 
   res.status(status).json({
     error: {
-      message
-    }
+      message,
+    },
   });
 });
 
-async function startServer() {
+export async function startServer() {
   await migrate(db, { migrationsFolder: "./drizzle" });
   app.listen(port, () => {
     console.log(`API listening on http://localhost:${port}`);
   });
 }
 
-startServer().catch((err) => {
-  console.error("Failed to start server:", err);
-  process.exit(1);
-});
+if (require.main === module) {
+  startServer().catch((err) => {
+    console.error("Failed to start server:", err);
+    process.exit(1);
+  });
+}

@@ -6,8 +6,8 @@ import { cache } from "./cache";
 import * as schema from "./schema";
 import { NewTask, NewUser, Task, User } from "./types";
 
-const client = postgres(process.env.DATABASE_URL!);
-export const db = drizzle(client, { schema });
+export const dbClient = postgres(process.env.DATABASE_URL!);
+export const db = drizzle(dbClient, { schema });
 
 async function invalidateUserTasksCache(userId: number): Promise<void> {
   try {
@@ -18,11 +18,11 @@ async function invalidateUserTasksCache(userId: number): Promise<void> {
 }
 
 export async function findItemById(id: string, userId: number): Promise<Task | undefined> {
-    const [task] = await db.select().from(schema.tasksSchema).where(and(
-            eq(schema.tasksSchema.id, Number(id)),
-            eq(schema.tasksSchema.userId, userId)
-        ));
-    return task;
+  const [task] = await db
+    .select()
+    .from(schema.tasksSchema)
+    .where(and(eq(schema.tasksSchema.id, Number(id)), eq(schema.tasksSchema.userId, userId)));
+  return task;
 }
 
 export async function listTasks(userId: number): Promise<Task[]> {
@@ -35,7 +35,9 @@ export async function listTasks(userId: number): Promise<Task[]> {
     console.error("Redis read failed, falling back to DB:", err);
   }
 
-  const tasks = await db.select().from(schema.tasksSchema)
+  const tasks = await db
+    .select()
+    .from(schema.tasksSchema)
     .where(eq(schema.tasksSchema.userId, userId));
 
   try {
@@ -68,17 +70,16 @@ export async function findUserByEmail(email: string): Promise<User | undefined> 
 
 export async function updateTask(task: Task) {
   const { id, userId, ...updates } = task;
-  await db.update(schema.tasksSchema).set(updates).where(and(
-    eq(schema.tasksSchema.id, id),
-    eq(schema.tasksSchema.userId, userId)
-  ));
+  await db
+    .update(schema.tasksSchema)
+    .set(updates)
+    .where(and(eq(schema.tasksSchema.id, id), eq(schema.tasksSchema.userId, userId)));
   await invalidateUserTasksCache(userId);
 }
 
 export async function deleteTask(task: Task) {
-  await db.delete(schema.tasksSchema).where(and(
-    eq(schema.tasksSchema.id, task.id),
-    eq(schema.tasksSchema.userId, task.userId)
-  ));
+  await db
+    .delete(schema.tasksSchema)
+    .where(and(eq(schema.tasksSchema.id, task.id), eq(schema.tasksSchema.userId, task.userId)));
   await invalidateUserTasksCache(task.userId);
 }

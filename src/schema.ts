@@ -10,5 +10,7 @@ export const tasksSchema = pgTable("tasks", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description").notNull().default(""),
-  userId: integer("userId").notNull().references(() => usersSchema.id),
+  userId: integer("userId")
+    .notNull()
+    .references(() => usersSchema.id),
 });

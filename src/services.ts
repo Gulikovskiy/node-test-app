@@ -1,8 +1,8 @@
-import { HttpError} from "./types";
+import { HttpError } from "./types";
 
 export function validateTaskInput(
   params: { name: unknown; description: unknown },
-  { partial = false }: { partial?: boolean } = {}
+  { partial = false }: { partial?: boolean } = {},
 ): HttpError | undefined {
   const { name, description } = params;
 
@@ -54,7 +54,7 @@ export function isInvalidId(id: unknown): boolean {
 }
 
 export function isString(value: unknown): value is string {
-  return typeof value === 'string';
+  return typeof value === "string";
 }
 
 export function isNonEmptyString(value: unknown): value is string {
@@ -71,12 +71,20 @@ export function createHttpError(status: number, message: string): HttpError {
   return error;
 }
 
-
 export function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    error.code === "23505"
-  );
+  return getErrorCode(error) === "23505" || getErrorCode(getErrorCause(error)) === "23505";
+}
+
+function getErrorCode(error: unknown): unknown {
+  if (typeof error !== "object" || error === null || !("code" in error)) {
+    return undefined;
+  }
+  return error.code;
+}
+
+function getErrorCause(error: unknown): unknown {
+  if (typeof error !== "object" || error === null || !("cause" in error)) {
+    return undefined;
+  }
+  return error.cause;
 }
