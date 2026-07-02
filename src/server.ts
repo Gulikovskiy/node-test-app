@@ -1,11 +1,12 @@
-import express, { type NextFunction, type Request, type Response } from "express";
 import argon2 from "argon2";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import express, { type NextFunction, type Request, type Response } from "express";
 import jwt from "jsonwebtoken";
-import { createHttpError, isInvalidId, isUniqueViolation, validateLoginInput, validateRegisterInput, validateTaskInput } from "./services";
-import { createTask, createUser, deleteTask, findItemById, findUserByEmail, listTasks, updateTask } from "./store";
-import { HttpError, TaskParams } from "./types";
 import { jwtSecret } from "./config";
 import { authenticate } from "./middleware";
+import { createHttpError, isInvalidId, isUniqueViolation, validateLoginInput, validateRegisterInput, validateTaskInput } from "./services";
+import { createTask, createUser, db, deleteTask, findItemById, findUserByEmail, listTasks, updateTask } from "./store";
+import { HttpError, TaskParams } from "./types";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -176,6 +177,14 @@ app.use((err: HttpError, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`API listening on http://localhost:${port}`);
+async function startServer() {
+  await migrate(db, { migrationsFolder: "./drizzle" });
+  app.listen(port, () => {
+    console.log(`API listening on http://localhost:${port}`);
+  });
+}
+
+startServer().catch((err) => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
 });
