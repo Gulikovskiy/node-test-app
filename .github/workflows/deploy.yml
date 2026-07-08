@@ -11,14 +11,12 @@ jobs:
 
     steps:
       - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd node-test-app
-            git pull
-            npm ci
-            npm run build
-            pm2 restart api
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
+          chmod 600 key.pem
+          ssh -i key.pem \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "cd node-test-app && git pull && npm ci && npm run build && pm2 restart api"
+          rm key.pem
