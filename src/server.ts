@@ -31,7 +31,6 @@ app.use(express.json());
 app.use("/tasks", authenticate);
 
 app.get("/health", (req: Request, res: Response) => {
-  console.log('TEST')
   res.json({ status: "test" });
 });
 
