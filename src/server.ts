@@ -31,7 +31,7 @@ app.use(express.json());
 app.use("/tasks", authenticate);
 
 app.get("/health", (req: Request, res: Response) => {
-  res.json({ status: "test2" });
+  res.json({ status: "test3" });
 });
 
 app.post("/auth/register", async (req: Request, res: Response, next: NextFunction) => {
