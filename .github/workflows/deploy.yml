@@ -22,5 +22,7 @@ jobs:
       - name: Deploy
         run: |
           ssh -vvv -i ~/.ssh/deploy_key \
+            -o PubkeyAcceptedAlgorithms=+ssh-rsa \
+            -o HostkeyAlgorithms=+ssh-rsa \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
             "echo connected"
