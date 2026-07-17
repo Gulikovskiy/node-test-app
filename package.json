@@ -4,9 +4,9 @@
   "description": "Simple Express REST API with in-memory data.",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "dev": "tsx watch src/server.ts",
+    "build": "node api.js && tsc",
+    "start": "node api.js && node dist/server.js",
+    "dev": "node api.js && tsx watch src/server.ts",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
